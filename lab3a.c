@@ -143,13 +143,26 @@ void print_free_inodes() {
     }
 }
 
-// give block number and parent_inode, print the directory entries summery
-void read_dir_ent(unsigned int parent_inode, unsigned int block_num) {
-	struct ext2_dir_entry dir_ent;
+// give block number and parent_inode, read and print the directory entries summery
+void read_dir_entry(unsigned int parent_inode_num, unsigned int block_num) {
+	struct ext2_dir_entry dir_entry;
 	long datablk_offset = block_offset(block_num);
-	unsigned int num_bytes = 0;
+	int byte_offset = 0;
 
-
+    while (byte_offset < block_size){
+        pread(device_fd, &dir_entry, sizeof(dir_entry), datablk_offset + byte_offset);
+        if (dir_entry.inode != 0){
+            fprintf(stdout, "DIRENT,%d,%d,%d,%d,%d,'%s'\n",
+            parent_inode_num,       // parent inode number (decimal)
+            byte_offset,            // logical byte offset (decimal) of this entry within the directory
+            dir_entry.inode,        // inode number of the referenced file (decimal)
+            dir_entry.rec_len,      // entry length (decimal)
+            dir_entry.name_len,     // name length (decimal)
+            dir_entry.name          // name, string, surrounded by single-quotes
+            );
+        }
+        byte_offset += dir_entry.rec_len;   // go to the next directory entry
+    }
 }
 
 // given inode number, print inode summery
@@ -219,8 +232,9 @@ void print_inode(int inode_num) {
 
     // first 12 are direct blocks
 	for (i = 0; i < 12; i++) {
+        // For each valid (non-zero I-node number) directory entry, produce a summery
 		if (inode.i_block[i] != 0 && filetype == 'd') {
-			read_dir_ent(inode_num, inode.i_block[i]);
+			read_dir_entry(inode_num, inode.i_block[i]);
 		}
 	}
 
