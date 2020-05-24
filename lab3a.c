@@ -10,8 +10,8 @@
 int device_fd;
 struct ext2_super_block superblock;
 struct ext2_group_desc groupdesc;
-long inode_bitmap_offset;
 long block_bitmap_offset;
+long inode_bitmap_offset;
 char *block_bitmap;
 char *inode_bitmap;
 
@@ -58,10 +58,13 @@ void read_groupdesc() {
 
 // print group summary 
 void print_groupdesc() {
+    int num_blocks_in_this_group = min(superblock.s_blocks_per_group, superblock.s_blocks_count);
+    int num_inodes_in_this_group = min(superblock.s_inodes_per_group, superblock.s_inodes_count);
+
     fprintf(stdout, "GROUP,%d,%d,%d,%d,%d,%d,%d,%d\n",
         superblock.s_block_group_nr,    // group number (decimal, starting from zero
-        superblock.s_blocks_per_group,  // total number of blocks in this group (decimal)
-        superblock.s_inodes_per_group,  // total number of i-nodes in this group (decimal)
+        num_blocks_in_this_group,       // total number of blocks in this group (decimal)
+        num_inodes_in_this_group,       // total number of i-nodes in this group (decimal)
         groupdesc.bg_free_blocks_count, // number of free blocks (decimal)
         groupdesc.bg_free_inodes_count, // number of free i-nodes (decimal)
         groupdesc.bg_block_bitmap,      // block number of free block bitmap for this group (decimal)
@@ -77,7 +80,7 @@ void free_block_bitmap() {
 
 // read in block bitmap
 void read_block_bitmap() {
-    // get block_bitmap 
+    // get block_bitmap offset
     block_bitmap_offset = block_offset(groupdesc.bg_block_bitmap);
 
     // allocate memory for block_bitmap
@@ -89,9 +92,9 @@ void read_block_bitmap() {
     atexit(free_block_bitmap);
 }
 
-// check if kth bit of bitmap A is used 
+// check if kth bit of bitmap A is used (1=used, 0=free)
 int used(char *A, int k) {
-    return A[(k/8)] & (1 << (k % 8)); 
+    return A[(k/8)] & (1 << (k % 8));
 }
 
 // scan the block bitmap. print each free block
@@ -141,9 +144,9 @@ void print_free_inodes() {
 
 void print_inode(int inode_num) {
     // TODO: print the inode summary for each inode, given inode_num
-    fprintf(stdout, "INODE,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+    // fprintf(stdout, "INODE,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
     
-    );
+    // );
 }
 
 // scan the inode bitmap. print each inode
