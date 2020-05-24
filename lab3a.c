@@ -144,6 +144,8 @@ void print_inode(int inode_num) {
     fprintf(stdout, "INODE,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
     
     );
+
+    
 }
 
 // scan the inode bitmap. print each inode
@@ -157,6 +159,7 @@ void print_inodes() {
             print_inode(inode_num);
     }
 }
+
 
 void main (int argc, char* argv[]) {
 	if (argc != 2) {
