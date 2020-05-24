@@ -7,7 +7,6 @@
 #include <time.h>
 #include "ext2_fs.h"
 
-
 int device_fd;
 struct ext2_super_block superblock;
 struct ext2_group_desc groupdesc;
@@ -143,6 +142,15 @@ void print_free_inodes() {
     }
 }
 
+// give block number and parent_inode, print the directory entries summery
+void read_dir_ent(unsigned int parent_inode, unsigned int block_num) {
+	struct ext2_dir_entry dir_ent;
+	long datablk_offset = block_offset(block_num);
+	unsigned int num_bytes = 0;
+
+
+}
+
 // given inode number, print inode summery
 void print_inode(int inode_num) {
     struct ext2_inode inode;
@@ -151,12 +159,13 @@ void print_inode(int inode_num) {
 	pread(device_fd, &inode, sizeof(inode), inode_offset);
   
     char filetype;
+    fprintf(stdout, "imode:%x, f:%x, s:%x, d:%x\n", inode.i_mode, S_IFREG, S_IFLNK, S_IFDIR);
     // ('f' for file, 'd' for directory, 's' for symbolic link, '?" for anything else)
-	if (inode.i_mode & S_IFLNK) { // symbolic link
-		filetype = 's';
-	} else if (inode.i_mode & S_IFREG) { // regular file
+	if (inode.i_mode == S_IFREG) {
 		filetype = 'f';
-	} else if (inode.i_mode & S_IFDIR) { // directory
+	} else if (inode.i_mode == S_IFLNK) {
+		filetype = 's';
+	} else if (inode.i_mode == S_IFDIR) {
 		filetype = 'd';
 	} else {
         filetype = '?';
@@ -186,10 +195,44 @@ void print_inode(int inode_num) {
     ptm = gmtime(&rawtime);
     fprintf(stdout, "%02d/%02d/%02d %02d:%02d:%02d,", ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year%100, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
 
-    fprintf(stdout, "%d,%d\n", 
+    fprintf(stdout, "%d,%d", 
 	    inode.i_size,           // file size (decimal)
 		inode.i_blocks          // number of (512 byte) blocks of disk space (decimal) taken up by this file
 	);
+
+    // For ordiary files (type 'f') and directories (type 'd') 
+    // the next 15 fields are block addresses (decimal) 
+    unsigned int i;
+	for (i = 0; i < 15; i++) {
+        if (filetype == 'f' || filetype == 'd'){
+            fprintf(stdout, ",%d", inode.i_block[i]);
+        } else if (filetype == 's' && inode.i_size > 60){
+            fprintf(stdout, ",%d", inode.i_block[i]);
+        }
+	}
+	fprintf(stdout, "\n");
+
+    // first 12 are direct blocks
+	for (i = 0; i < 12; i++) {
+		if (inode.i_block[i] != 0 && filetype == 'd') {
+			read_dir_ent(inode_num, inode.i_block[i]);
+		}
+	}
+
+    //one indirect
+    if (inode.i_block[12] != 0) {
+
+    }
+
+    //one double indirect
+    if (inode.i_block[13] != 0) {
+
+    }
+
+    //one triple indirect
+    if (inode.i_block[14] != 0) {
+
+    }
 }
 
 // scan the inode bitmap. print each used inode
