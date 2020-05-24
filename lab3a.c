@@ -9,6 +9,7 @@
 
 int device_fd;
 struct ext2_super_block superblock;
+struct ext2_group_desc groupdesc;
 int block_size;
 
 // takes a block number and return its offset 
@@ -24,6 +25,7 @@ int main (int argc, char* argv[]) {
 
     device_fd = open(argv[1], O_RDONLY);
 
+    // read superblock
     pread(device_fd, &superblock, sizeof(superblock), 1024);
 
     // verify if it is superblock
@@ -46,7 +48,20 @@ int main (int argc, char* argv[]) {
     // get the block size from superblock
     block_size = EXT2_MIN_BLOCK_SIZE << superblock.s_log_block_size;
 
+    // read group descriptor
+    pread(device_fd, &groupdesc, sizeof(groupdesc), block_size + 1024);
     
+    // group summary
+    fprintf(stdout, "GROUP,%d,%d,%d,%d,%d,%d,%d,%d\n",
+        superblock.s_block_group_nr,    // group number (decimal, starting from zero
+        superblock.s_blocks_per_group,  // total number of blocks in this group (decimal)
+        superblock.s_inodes_per_group,  // total number of i-nodes in this group (decimal)
+        groupdesc.bg_free_blocks_count, // number of free blocks (decimal)
+        groupdesc.bg_free_inodes_count, // number of free i-nodes (decimal)
+        groupdesc.bg_block_bitmap,      // block number of free block bitmap for this group (decimal)
+        groupdesc.bg_inode_bitmap,      // block number of free i-node bitmap for this group (decimal)
+        groupdesc.bg_inode_table        // block number of first block of i-nodes in this group (decimal)
+    );
 
     
 
