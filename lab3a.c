@@ -160,13 +160,23 @@ void print_inode(int inode_num) {
 	pread(device_fd, &inode, sizeof(inode), inode_offset);
   
     char filetype;
-    fprintf(stdout, "imode:%x, f:%x, s:%x, d:%x\n", inode.i_mode, S_IFREG, S_IFLNK, S_IFDIR);
+
+
+    int file_format = (inode.i_mode >> 12) << 12;
     // ('f' for file, 'd' for directory, 's' for symbolic link, '?" for anything else)
+<<<<<<< HEAD
 	if (inode.i_mode & 0x8000) {
 		filetype = 'f';
 	} else if (inode.i_mode & 0xA000) {
 		filetype = 's';
 	} else if (inode.i_mode & 0x4000) {
+=======
+	if (file_format == S_IFREG) {
+		filetype = 'f';
+	} else if (file_format == S_IFLNK) {
+		filetype = 's';
+	} else if (file_format == S_IFDIR) {
+>>>>>>> c0fa50be8aede2460bf0e70bcd2176821b354df2
 		filetype = 'd';
 	} else {
         filetype = '?';
