@@ -10,7 +10,6 @@
 int device_fd;
 struct ext2_super_block superblock;
 struct ext2_group_desc groupdesc;
-char *block_bitmap;
 int block_size;
 
 // takes a block number and return its offset 
@@ -66,29 +65,53 @@ void print_groupdesc() {
     );
 }
 
-// test the bit at the kth bit in the bit array A
-int check_bit(int *A, int k) {
+// check if kth bit of array A is used 
+int used(char *A, int k) {
     return A[(k/8)] & (1 << (k % 8)); 
 }
 
-// scan the free block bitmap for each group (there is only one group for this lab)
+// scan the block bitmap. print each free block
 void print_free_blocks() {
     int i; 
 
     // get block_bitmap 
     long bitmap_offset = block_offset(groupdesc.bg_block_bitmap);
-    block_bitmap = (char *) malloc(sizeof(block_size));
+    char *block_bitmap = (char *) malloc(sizeof(block_size));
 
     // read block_bitmap 
     pread(device_fd, block_bitmap, sizeof(block_size), bitmap_offset);
 
     // print free blocks
     for (i = 0; i < superblock.s_blocks_per_group; i++) {
-        if (!checkBit(block_bitmap, i)) {
-            fprintf("BFREE,%d\n", i + 1);
+        int block_number = i + 1;
+        if (!used(block_bitmap, i)) {
+            fprintf("BFREE,%d\n", block_number);
         }
     }
+
     free(block_bitmap);
+}
+
+// scan the inode bitmap. print each free inode.
+void print_free_inodees() {
+    int i;
+
+    // get inode bitmap 
+    long inode_offset = block_offset(groupdesc.bg_inode_bitmap);
+    char *inode_bitmap = (char *) malloc(sizeof(block_size));
+
+    // read inode_bitmap
+    pread(device_fd, inode_bitmap, sizeof(block_size), inode_offset);
+
+    // print free blocks 
+    for (i = 0; i < superblock.s_inodes_per_group; i++) {
+        int block_number = i + 1;
+        if (!used(inode_bitmap, i)) {
+            fprintf("IFREE,%d\n", block_number);
+        }
+    }
+
+    free(inode_bitmap);
 }
 
 int main (int argc, char* argv[]) {
