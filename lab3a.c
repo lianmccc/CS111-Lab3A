@@ -84,10 +84,10 @@ void read_block_bitmap() {
     block_bitmap_offset = block_offset(groupdesc.bg_block_bitmap);
 
     // allocate memory for block_bitmap
-    block_bitmap = (char *) malloc(sizeof(block_size));
+    block_bitmap = (char *) malloc(block_size);
 
     // read block_bitmap 
-    pread(device_fd, block_bitmap, sizeof(block_size), block_bitmap_offset);
+    pread(device_fd, block_bitmap, block_size, block_bitmap_offset);
 
     atexit(free_block_bitmap);
 }
@@ -121,10 +121,10 @@ void read_inode_bitmap() {
     inode_bitmap_offset = block_offset(groupdesc.bg_inode_bitmap);
 
     // allocated memory for inode_bitmap
-    inode_bitmap = (char *) malloc(sizeof(block_size));
+    inode_bitmap = (char *) malloc(block_size);
 
     // read inode_bitmap
-    pread(device_fd, inode_bitmap, sizeof(block_size), inode_bitmap_offset);
+    pread(device_fd, inode_bitmap, block_size, inode_bitmap_offset);
 
     atexit(free_inode_bitmap);
 }
@@ -132,7 +132,7 @@ void read_inode_bitmap() {
 // scan the inode bitmap. print each free inode.
 void print_free_inodes() {
     int i;
-
+    
     // print free inodes 
     for (i = 0; i < superblock.s_inodes_per_group; i++) {
         int inode_num = i + 1;
