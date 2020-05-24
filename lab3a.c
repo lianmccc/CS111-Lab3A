@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 #include "ext2_fs.h"
 
 int device_fd;
@@ -161,11 +162,11 @@ void print_inode(int inode_num) {
     char filetype;
     fprintf(stdout, "imode:%x, f:%x, s:%x, d:%x\n", inode.i_mode, S_IFREG, S_IFLNK, S_IFDIR);
     // ('f' for file, 'd' for directory, 's' for symbolic link, '?" for anything else)
-	if (inode.i_mode == S_IFREG) {
+	if (inode.i_mode & 0x8000) {
 		filetype = 'f';
-	} else if (inode.i_mode == S_IFLNK) {
+	} else if (inode.i_mode & 0xA000) {
 		filetype = 's';
-	} else if (inode.i_mode == S_IFDIR) {
+	} else if (inode.i_mode & 0x4000) {
 		filetype = 'd';
 	} else {
         filetype = '?';
