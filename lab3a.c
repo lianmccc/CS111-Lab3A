@@ -66,7 +66,7 @@ void print_groupdesc() {
     );
 }
 
-// thest the bit at the kth bit in the bit array A;
+// test the bit at the kth bit in the bit array A
 int check_bit(int *A, int k) {
     return A[(k/8)] & (1 << (k % 8)); 
 }
@@ -74,11 +74,17 @@ int check_bit(int *A, int k) {
 // scan the free block bitmap for each group (there is only one group for this lab)
 void print_free_blocks() {
     int i; 
+
+    // get block_bitmap 
     long bitmap_offset = block_offset(groupdesc.bg_block_bitmap);
     block_bitmap = (char *) malloc(sizeof(block_size));
+
+    // read block_bitmap 
     pread(device_fd, block_bitmap, sizeof(block_size), bitmap_offset);
+
+    // print free blocks
     for (i = 0; i < superblock.s_blocks_per_group; i++) {
-        if (checkBit(block_bitmap, i)) {
+        if (!checkBit(block_bitmap, i)) {
             fprintf("BFREE,%d\n", i + 1);
         }
     }
