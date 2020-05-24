@@ -147,7 +147,7 @@ void print_free_inodes() {
 void print_inode(int inode_num) {
     struct ext2_inode inode;
 
-	long inode_offset = block_offset(groupdesc.bg_inode_table) + inode_num * sizeof(inode);
+	long inode_offset = block_offset(groupdesc.bg_inode_table) + (inode_num - 1) * sizeof(inode);
 	pread(device_fd, &inode, sizeof(inode), inode_offset);
   
     char filetype;
