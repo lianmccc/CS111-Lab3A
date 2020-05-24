@@ -58,8 +58,8 @@ void read_groupdesc() {
 
 // print group summary 
 void print_groupdesc() {
-    int num_blocks_in_this_group = min(superblock.s_blocks_per_group, superblock.s_blocks_count);
-    int num_inodes_in_this_group = min(superblock.s_inodes_per_group, superblock.s_inodes_count);
+    int num_blocks_in_this_group = (superblock.s_blocks_per_group < superblock.s_blocks_count) ? superblock.s_blocks_per_group : superblock.s_blocks_count;
+    int num_inodes_in_this_group = (superblock.s_inodes_per_group < superblock.s_inodes_count) ? superblock.s_inodes_per_group : superblock.s_inodes_count;
 
     fprintf(stdout, "GROUP,%d,%d,%d,%d,%d,%d,%d,%d\n",
         superblock.s_block_group_nr,    // group number (decimal, starting from zero
