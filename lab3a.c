@@ -100,10 +100,10 @@ void print_free_blocks() {
 
     // print free blocks
     for (i = 0; i < superblock.s_blocks_per_group; i++) {
-        int block_number = i + 1;
-        if (!used(block_bitmap, i)) {
-            fprintf("BFREE,%d\n", block_number);
-        }
+        int block_num = i + 1;
+
+        if (!used(block_bitmap, i)) 
+            fprintf(stdout, "BFREE,%d\n", block_num);
     }
 }
 
@@ -132,15 +132,30 @@ void print_free_inodes() {
 
     // print free inodes 
     for (i = 0; i < superblock.s_inodes_per_group; i++) {
-        int inode_number = i + 1;
-        if (!used(inode_bitmap, i)) {
-            fprintf("IFREE,%d\n", inode_number);
-        }
+        int inode_num = i + 1;
+
+        if (!used(inode_bitmap, i)) 
+            fprintf(stdout, "IFREE,%d\n", inode_num);
     }
 }
 
-void print_inodes() {
+void print_inode(int inode_num) {
+    // TODO: print the inode summary for each inode, given inode_num
+    fprintf(stdout, "INODE,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+    
+    );
+}
 
+// scan the inode bitmap. print each inode
+void print_inodes() {
+    int i;
+
+    // print free inodes 
+    for (i = 0; i < superblock.s_inodes_per_group; i++) {
+        int inode_num = i + 1;
+        if (used(inode_bitmap, i))
+            print_inode(inode_num);
+    }
 }
 
 void main (int argc, char* argv[]) {
