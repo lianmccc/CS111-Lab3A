@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 #include "ext2_fs.h"
 
 
@@ -99,7 +100,7 @@ int used(char *A, int k) {
 
 // scan the block bitmap. print each free block
 void print_free_blocks() {
-    int i; 
+    unsigned int i; 
 
     // print free blocks
     for (i = 0; i < superblock.s_blocks_per_group; i++) {
@@ -131,8 +132,8 @@ void read_inode_bitmap() {
 
 // scan the inode bitmap. print each free inode.
 void print_free_inodes() {
-    int i;
-    
+    unsigned int i;
+
     // print free inodes 
     for (i = 0; i < superblock.s_inodes_per_group; i++) {
         int inode_num = i + 1;
@@ -142,16 +143,58 @@ void print_free_inodes() {
     }
 }
 
+// given inode number, print inode summery
 void print_inode(int inode_num) {
-    // TODO: print the inode summary for each inode, given inode_num
-    // fprintf(stdout, "INODE,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
-    
-    // );
+    struct ext2_inode inode;
+
+	long inode_offset = block_offset(groupdesc.bg_inode_table) + (inode_num - 1) * sizeof(inode);
+	pread(device_fd, &inode, sizeof(inode), inode_offset);
+  
+    char filetype;
+    // ('f' for file, 'd' for directory, 's' for symbolic link, '?" for anything else)
+	if (inode.i_mode & S_IFLNK) { // symbolic link
+		filetype = 's';
+	} else if (inode.i_mode & S_IFREG) { // regular file
+		filetype = 'f';
+	} else if (inode.i_mode & S_IFDIR) { // directory
+		filetype = 'd';
+	} else {
+        filetype = '?';
+    }
+
+    fprintf(stdout, "INODE,%d,%c,%o,%d,%d,%d,",
+        inode_num,              // inode number (decimal)
+        filetype,               // file type 
+        inode.i_mode & 0xFFF,   // mode (low order 12-bits, octal ... suggested format "%o")
+        inode.i_uid,            // owner (decimal)
+        inode.i_gid,            // group (decimal)
+        inode.i_links_count     // link count (decimal)
+    );
+
+    // time of last I-node change (mm/dd/yy hh:mm:ss, GMT)
+    time_t rawtime = inode.i_ctime;
+    struct tm *ptm = gmtime(&rawtime);
+    fprintf(stdout, "%02d/%02d/%02d %02d:%02d:%02d,", ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year%100, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+
+    // modification time (mm/dd/yy hh:mm:ss, GMT)
+    rawtime = inode.i_mtime;
+    ptm = gmtime(&rawtime);
+    fprintf(stdout, "%02d/%02d/%02d %02d:%02d:%02d,", ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year%100, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+
+    // time of last access (mm/dd/yy hh:mm:ss, GMT)
+    rawtime = inode.i_atime;
+    ptm = gmtime(&rawtime);
+    fprintf(stdout, "%02d/%02d/%02d %02d:%02d:%02d,", ptm->tm_mon+1, ptm->tm_mday, ptm->tm_year%100, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+
+    fprintf(stdout, "%d,%d\n", 
+	    inode.i_size,           // file size (decimal)
+		inode.i_blocks          // number of (512 byte) blocks of disk space (decimal) taken up by this file
+	);
 }
 
-// scan the inode bitmap. print each inode
+// scan the inode bitmap. print each used inode
 void print_inodes() {
-    int i;
+    unsigned int i;
 
     // print free inodes 
     for (i = 0; i < superblock.s_inodes_per_group; i++) {
@@ -161,8 +204,7 @@ void print_inodes() {
     }
 }
 
-
-void main (int argc, char* argv[]) {
+int main (int argc, char* argv[]) {
 	if (argc != 2) {
 		fprintf(stderr, "bad arguments\n");
 		exit(1);
@@ -182,6 +224,7 @@ void main (int argc, char* argv[]) {
     read_inode_bitmap();
     print_free_inodes();
 
+    print_inodes();
 
     exit(0);
 }
