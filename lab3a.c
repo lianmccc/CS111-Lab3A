@@ -1,5 +1,7 @@
 /*
-
+NAME: Mingchao Lian,Seoyoon Jin
+EMAIL: lianmccc@ucla.edu,seoyoonjin@g.ucla.edu
+ID: 005348062,505297593
 */
 
 #include <stdio.h>
@@ -172,11 +174,7 @@ void read_dir_entry(unsigned int parent_inode_num, unsigned int block_num) {
 }
 
 // given the location (block number) of the indirect block and the index, return a single indirect block number
-<<<<<<< HEAD
-int read_ind_block(int parent_inode_num, int level, int logical_offset, int ind_block_num, int index) {
-=======
 int read_ind_block(int owner_inode_num, int level, int logical_offset, int ind_block_num, int index, char filetype) {
->>>>>>> 3a687e7dd6c9ccb7a2f0046ccab37fe342b142fa
     
     int block_num;
     pread(device_fd, &block_num, sizeof(int), block_offset(ind_block_num) + index * sizeof(int));
@@ -186,7 +184,7 @@ int read_ind_block(int owner_inode_num, int level, int logical_offset, int ind_b
 		stdout, 
 		"%s,%d,%d,%d,%d,%d\n",
 		"INDIRECT",
-	    parent_inode_num,        // I-node number of the owning file (decimal)
+	    owner_inode_num,        // I-node number of the owning file (decimal)
 		level,                  // (decimal) level of indirection for the block being scanned 
 		logical_offset,         // logical block offset (decimal) represented by the referenced block. 
 		ind_block_num,          // block number of the (1, 2, 3) indirect block being scanned (decimal) . . . not the highest level block (in the recursive scan), 
@@ -236,7 +234,7 @@ void read_triple_ind_block(int owner_inode_num, int ind_block_num, char filetype
     int triple_ind_block_num, double_ind_block_num;
 
     for (i = 0; i < num_blocks; i++) {
-        offset = EXT2_NDIR_BLOCKS + (i + 2) * num_blocks;
+        offset = EXT2_NDIR_BLOCKS + ((i + 1) * num_blocks + 1) * num_blocks;
         triple_ind_block_num = read_ind_block(owner_inode_num, 3, offset, ind_block_num, i, filetype);
 
         if (triple_ind_block_num == 0) continue;

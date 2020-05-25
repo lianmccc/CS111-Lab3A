@@ -258,6 +258,7 @@ do
 	cmp GOLDEN.csv TEST
 	if [ $? -ne 0 ]; then
 		echo "    $t ... OUTPUT DOES NOT MATCH"
+		cat GOLDEN.csv
 		let errors+=1
 	else
 		echo "    $t ... all" `wc -l < GOLDEN.csv` "output lines match"
