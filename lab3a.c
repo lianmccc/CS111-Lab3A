@@ -103,7 +103,7 @@ void print_free_blocks() {
     unsigned int i; 
 
     // print free blocks
-    for (i = 0; i < superblock.s_blocks_per_group; i++) {
+    for (i = 0; i < superblock.s_blocks_count; i++) {
         int block_num = i + 1;
 
         if (!used(block_bitmap, i)) 
@@ -135,7 +135,7 @@ void print_free_inodes() {
     unsigned int i;
 
     // print free inodes 
-    for (i = 0; i < superblock.s_inodes_per_group; i++) {
+    for (i = 0; i < superblock.s_inodes_count; i++) {
         int inode_num = i + 1;
 
         if (!used(inode_bitmap, i)) 
@@ -224,8 +224,15 @@ void print_inode(int inode_num) {
 		}
 	}
 
+    int num_blocks = block_size / sizeof(int);
     //one indirect
-    if (inode.i_block[12] != 0) {
+    if (inode.i_block[EXT2_IND_BLOCK] != 0) {
+        
+        for (i =0; i < num_blocks; i++) {
+            int ind_block_num = get_ind_block_num();
+            if (ind_block_num == 0) continue;
+
+        }
 
     }
 
@@ -245,7 +252,7 @@ void print_inodes() {
     unsigned int i;
 
     // print free inodes 
-    for (i = 0; i < superblock.s_inodes_per_group; i++) {
+    for (i = 0; i < superblock.s_inodes_count; i++) {
         int inode_num = i + 1;
         if (used(inode_bitmap, i))
             print_inode(inode_num);
