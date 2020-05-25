@@ -1,7 +1,7 @@
 /*
-NAME: Mingchao Lian,Seoyoon Jin
-EMAIL: lianmccc@ucla.edu,seoyoonjin@g.ucla.edu
-ID: 005348062,505297593
+NAME: Mingchao Lian, Seoyoon Jin
+EMAIL: lianmccc@ucla.edu, seoyoonjin@g.ucla.edu
+ID: 005348062, 505297593
 */
 
 #include <stdio.h>
@@ -37,7 +37,7 @@ void read_superblock() {
     // verify if it is superblock
     if (superblock.s_magic != EXT2_SUPER_MAGIC) {
         fprintf(stderr, "is not superblock\n");
-		exit(2);
+		exit(1);
     }
 
     // get the block size from superblock
