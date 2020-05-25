@@ -17,6 +17,7 @@ char *block_bitmap;
 char *inode_bitmap;
 
 int block_size;
+int num_blocks; // number of block number entries in a block (block_size / sizeof(int))
 
 // takes a block number and return its offset 
 long block_offset(int block_num) {
@@ -35,6 +36,7 @@ void read_superblock() {
 
     // get the block size from superblock
     block_size = EXT2_MIN_BLOCK_SIZE << superblock.s_log_block_size;
+    num_blocks = block_size / sizeof(int);
 }
 
 // print super block summary 
@@ -165,6 +167,86 @@ void read_dir_entry(unsigned int parent_inode_num, unsigned int block_num) {
     }
 }
 
+// given the location (block number) of the indirect block and the index, return a single indirect block number
+int read_ind_block(int owner_inode_num, int level, int logical_offset, int ind_block_num, int index) {
+    
+    int block_num;
+    pread(device_fd, &block_num, sizeof(int), block_offset(ind_block_num) + index * sizeof(int));
+    if (block_num == 0) return 0; //this indirect block number entry is not valid
+
+    fprintf(
+		stdout, 
+		"%s,%d,%d,%d,%d,%d\n",
+		"INDIRECT",
+	    owner_inode_num,        // I-node number of the owning file (decimal)
+		level,                  // (decimal) level of indirection for the block being scanned 
+		logical_offset,         // logical block offset (decimal) represented by the referenced block. 
+		ind_block_num,          // block number of the (1, 2, 3) indirect block being scanned (decimal) . . . not the highest level block (in the recursive scan), 
+		block_num               // block number of the referenced block (decimal)
+	);
+
+    return block_num;
+}
+
+
+// read single indirect block given the owner inode number and the location (block number) of the indirect block
+void read_single_ind_block(int owner_inode_num, int ind_block_num) {
+    int i, offset;
+
+
+    for (i = 0; i < num_blocks; i++) {
+        offset = EXT2_NDIR_BLOCKS + i;
+
+        read_ind_block(owner_inode_num, 1, offset, ind_block_num, i);
+    }
+}
+
+// read double indirect block give the owner inode number and the location (block number) of the indirect block 
+void read_double_ind_block(int owner_inode_num, int ind_block_num) {
+    int i, j;
+    int offset;
+    int double_ind_block_num;
+
+    for (i = 0; i < num_blocks; i++) {
+        offset = EXT2_NDIR_BLOCKS + (i + 1) * num_blocks;
+        double_ind_block_num = read_ind_block(owner_inode_num, 2, offset, ind_block_num, i);
+        
+        if (double_ind_block_num == 0) continue; // this indirect block is not in use 
+
+        for (j = 0; j < num_blocks; j++) {
+            offset = EXT2_NDIR_BLOCKS + (i + 1) * num_blocks + j;
+            read_ind_block(owner_inode_num, 1, offset, double_ind_block_num, j);
+        }
+    }   
+}
+
+
+void read_triple_ind_block(int owner_inode_num, int ind_block_num) {
+    int i, j, k;
+    int offset;
+    int triple_ind_block_num, double_ind_block_num;
+
+    for (i = 0; i < num_blocks; i++) {
+        offset = EXT2_NDIR_BLOCKS + (i + 2) * num_blocks;
+        triple_ind_block_num = read_ind_block(owner_inode_num, 3, offset, ind_block_num, i);
+
+        if (triple_ind_block_num == 0) continue;
+
+        for (j = 0; j < num_blocks; j++) {
+            offset = EXT2_NDIR_BLOCKS + ((i + 1) * num_blocks + j + 1) * num_blocks;
+            double_ind_block_num = read_ind_block(owner_inode_num, 2 , offset, triple_ind_block_num, j);
+            
+            if (double_ind_block_num == 0) continue;
+
+            for (k = 0; k < num_blocks; k++) {
+                offset = EXT2_NDIR_BLOCKS + ((i + 1) * num_blocks + j + 1) * num_blocks + k;
+                read_ind_block(owner_inode_num, 1, offset, double_ind_block_num, k);
+            }
+        }
+    }
+}
+
+
 // given inode number, print inode summery
 void print_inode(int inode_num) {
     struct ext2_inode inode;
@@ -238,26 +320,20 @@ void print_inode(int inode_num) {
 		}
 	}
 
-    int num_blocks = block_size / sizeof(int);
+    
     //one indirect
     if (inode.i_block[EXT2_IND_BLOCK] != 0) {
-        
-        for (i =0; i < num_blocks; i++) {
-            int ind_block_num = get_ind_block_num();
-            if (ind_block_num == 0) continue;
-
-        }
-
+        read_single_ind_block(inode_num, inode.i_block[EXT2_IND_BLOCK]);
     }
 
     //one double indirect
-    if (inode.i_block[13] != 0) {
-
+    if (inode.i_block[EXT2_DIND_BLOCK] != 0) {
+        read_double_ind_block(inode_num, inode.i_block[EXT2_DIND_BLOCK]);
     }
 
     //one triple indirect
-    if (inode.i_block[14] != 0) {
-
+    if (inode.i_block[EXT2_TIND_BLOCK] != 0) {
+        read_triple_ind_block(inode_num, inode.i_block[EXT2_TIND_BLOCK]);
     }
 }
 
